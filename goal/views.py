@@ -1,17 +1,12 @@
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import ModelViewSet
 from .models import Goal
 from .serializers import GoalSerializer
+from rest_framework.permissions import AllowAny
 
-class GoalViewSet(viewsets.ModelViewSet):
+class GoalViewSet(ModelViewSet):
+    """
+    A viewset for viewing and editing Goal instances.
+    """
     queryset = Goal.objects.all()
     serializer_class = GoalSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        # 현재 로그인한 사용자의 목표만 반환
-        return self.queryset.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        # 목표 생성 시 현재 유저를 저장
-        serializer.save(user=self.request.user)
+    permission_classes = [AllowAny]  # 모든 사용자에게 접근 허용

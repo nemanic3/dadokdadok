@@ -1,10 +1,9 @@
-from django.conf import settings  # 사용자 모델 가져오기
 from django.db import models
+from django.conf import settings
 
 class Recommendation(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='recommendations')  # 수정된 부분
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     book_title = models.CharField(max_length=255)
+    author = models.CharField(max_length=255, default="Unknown Author")
+    description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Recommendation for {self.user.username}: {self.book_title}"

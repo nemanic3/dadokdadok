@@ -1,11 +1,14 @@
-from django.conf import settings  # 사용자 모델 가져오기
+import datetime
 from django.db import models
+from django.conf import settings
 
 class Goal(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='goals')  # 수정된 부분
-    goal_count = models.IntegerField()
-    progress = models.IntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    start_date = models.DateField(default=datetime.date.today)  # 기본값: 오늘 날짜
+    end_date = models.DateField(default=datetime.date.today)  # 기본값: 오늘 날짜
+    is_completed = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.user.username}'s Goal: {self.goal_count} books"
+        return self.title

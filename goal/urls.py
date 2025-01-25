@@ -3,8 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import GoalViewSet
 
 router = DefaultRouter()
-router.register(r'goals', GoalViewSet)
+router.register('', GoalViewSet, basename='goal')
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('', include(router.urls)),  # /goal/에서 동작
 ]
