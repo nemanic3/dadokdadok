@@ -1,0 +1,61 @@
+/* 로그인 폼 */
+.login-container {
+  width: 90%;
+  max-width: 400px;
+  margin: 5% auto;
+  text-align: center;
+  background: white;
+  padding: 2em;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 비밀번호 입력 컨테이너 */
+.password-container {
+  position: relative;
+  width: 100%;
+}
+
+.password-container .toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.2em;
+}
+
+/* 로그인 상태 유지 */
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1em 0;
+  font-size: 0.9em;
+}
+
+/* 체크박스 커스텀 */
+.remember-me {
+  display: flex;
+  align-items: center;
+}
+
+.remember-me input {
+  display: none;
+}
+
+.remember-me .checkmark {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.5em;
+  text-align: center;
+  font-size: 1em;
+}
+
+/* 회원가입 링크 */
+.signup-link {
+  text-align: center;
+  margin-top: 1em;
+  font-size: 0.9em;
+}

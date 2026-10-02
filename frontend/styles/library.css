@@ -1,0 +1,107 @@
+body {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 300; /* ✅ 기본적으로 얇은 글씨(Light) */
+  margin: 0;
+  padding: 0;
+  background-color: #f9f9f9;
+}
+
+.library-container {
+  width: 80%;
+  margin: 40px auto;
+}
+
+.library-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+h1, h2, h3 {
+  font-weight: 400; /* ✅ 제목(Regular) */
+}
+
+h1 {
+  font-size: 2.2rem;
+}
+
+h2 {
+  font-size: 1.2rem;
+}
+
+h3 {
+  font-size: 1.2rem;
+}
+
+#write-review-btn {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 300; /* ✅ 버튼은 Light */
+  color: #555;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+#write-review-btn:hover {
+  text-decoration: underline;
+}
+
+.book-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.book-card {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.book-card:hover {
+  transform: scale(1.05);
+}
+
+.book-cover {
+  width: 100%;
+  height: 240px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 5px;
+}
+
+.book-info {
+  padding: 10px;
+  text-align: left;
+}
+
+.book-info h3 {
+  font-size: 1rem;
+  font-weight: 400; /* ✅ 책 제목도 Regular */
+  margin: 5px 0;
+}
+
+.rating {
+  color: #ffcc00;
+  font-weight: 300; /* ✅ 별점은 Light */
+}
+
+.review {
+  font-size: 0.9rem;
+  font-weight: 300; /* ✅ 리뷰 요약도 Light */
+  color: #555;
+  margin-top: 5px;
+}
+
+.no-books-message {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 300; /* ✅ "더 이상 책이 없습니다" 문구도 Light */
+  color: #888;
+  margin-top: 20px;
+}

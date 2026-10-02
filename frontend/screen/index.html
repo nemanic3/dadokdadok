@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - 다독다독</title>
+    <link rel="stylesheet" href="../styles/index.css">
+    <link rel="stylesheet" href="../styles/global.css">
+</head>
+<body class="index-page">
+
+    <header>
+        <nav class="navbar">
+            <a href="main.html" class="logo">
+                <img src="../assets/images/logo.png" alt="다독다독 로고">
+                <span class="logo-text">
+                    <span class="first">다독</span><span class="second">다독</span>
+                </span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="library.html">내 서재</a></li>
+                <li><a href="goals.html">목표 및 통계</a></li>
+            </ul>
+            <div class="user-actions">
+                <button class="login-button" id="login-btn">로그인</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="login-container">
+        <h1 class="login-title">로그인</h1>
+        <form id="login-form">
+            <label for="username">아이디</label>
+            <input type="text" id="username" placeholder="hicc@example.com" required>
+            
+            <label for="password">비밀번호</label>
+            <div class="password-container">
+                <input type="password" id="password" placeholder="비밀번호 입력" required>
+                <span class="toggle-password">🙈</span>
+            </div>
+
+            <div class="login-options">
+                <a href="find-account.html">아이디 / 비밀번호 찾기</a>  <!-- ✅ 수정된 부분 -->
+            </div>
+    
+
+            <button type="submit" class="login-btn">로그인</button>
+        </form>
+
+        <hr>
+
+        <p class="signup-link"><a href="register.html">회원가입하기</a></p>
+    </main>
+
+    <script src="../scripts/login.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/common.js"></script>
+
+</body>
+</html>

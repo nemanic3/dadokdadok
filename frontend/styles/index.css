@@ -1,0 +1,137 @@
+/* 전체 레이아웃 */
+body {
+  font-family: 'Pretendard', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+}
+
+/* 로그인 페이지 스타일 */
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 4% auto 0;
+  text-align: center;
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.login-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 1.2rem;
+}
+
+/* 입력 필드 */
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 0.8rem;
+  margin: 0.5rem 0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  background-color: #f8f8f8;
+  color: #333;
+}
+
+/* 비밀번호 입력 필드 */
+.password-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.password-container input {
+  width: 100%;
+  padding-right: 40px;
+  height: 48px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  background-color: #f8f8f8;
+  color: #333;
+}
+
+/* 비밀번호 보기 아이콘 */
+.password-container .toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+}
+
+/* 로그인 버튼 */
+.login-btn {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  background-color: #FFC200;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.login-btn:hover {
+  background-color: #E0A800;
+}
+
+/* 회원가입 및 아이디 찾기 */
+.login-options {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.8rem 0;
+}
+
+.login-options a {
+  font-size: 0.9rem;
+  color: #555;
+  text-decoration: none;
+}
+
+.signup-link {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* 반응형 스타일 */
+@media (max-width: 768px) {
+  .login-container {
+    margin: 2% auto 0;
+    padding: 1.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 1.5rem;
+  }
+}
+
+/* 네비게이션 바 (index.html에서만 적용) */
+.index-page .navbar {
+  justify-content: flex-start;
+  padding-left: 5vw; /* 왼쪽에서 5vw만큼 여백 추가 */
+}
+
+/* 네비게이션 링크 (내 서재, 목표 및 통계) */
+.index-page .nav-links {
+  margin-left: 3vw; /* 기존보다 조금만 오른쪽으로 */
+}
+
+/* 사용자 버튼 (로그인 버튼) */
+.index-page .user-actions {
+  margin-left: auto; /* 로그인 버튼은 오른쪽 끝으로 */
+}
+

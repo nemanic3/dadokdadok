@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>리뷰 상세 - 다독다독</title>
+    <link rel="stylesheet" href="/styles/global.css">
+    <link rel="stylesheet" href="/styles/review-detail.css">
+    <link href="https://cdn.jsdelivr.net/npm/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+</head>
+<body>
+  <header>
+      <nav class="navbar">
+          <a href="main.html" class="logo">
+              <img src="/assets/images/logo.png" alt="다독다독 로고">
+              <span class="logo-text"><span class="first">다독</span><span class="second">다독</span></span>
+          </a>
+          <ul class="nav-links">
+              <li><a href="library.html">내 서재</a></li>
+              <li><a href="goals.html" class="active">목표 및 통계</a></li>
+          </ul>
+          <input type="text" class="search-bar" placeholder="검색">
+          <div class="user-actions">
+              <a href="index.html" class="login-button" id="login-btn">로그인</a>
+              <a href="mypage.html" class="profile-button" id="profile-btn" style="display: none;">내 정보</a>
+              <button class="logout-button" id="logout-btn" style="display: none;">로그아웃</button>
+          </div>
+      </nav>
+  </header>
+
+    <main class="review-container">
+        <aside class="book-info">
+            <h2 id="book-title"></h2>
+            <img id="book-image" src="" alt="책 표지">
+            <p id="book-author"></p>
+            <p id="book-publisher"></p>
+        </aside>
+
+        <section class="review-content">
+            <!-- 작성자 정보 -->
+            <div class="review-header">
+                <div class="review-author-container">
+                    <img id="review-author-image" class="profile-icon" src="/assets/images/default_profile.png" alt="작성자 프로필">
+                    <span id="review-author"></span>
+                </div>
+                <span id="review-date" class="review-date"></span>
+            </div>
+
+            <div class="review-box">
+                <div class="review-box-top">
+                    <div class="review-rating-container">
+                        <div class="review-rating" id="review-rating"></div>
+                        <span id="rating-value" class="rating-value"></span>
+                        <div class="review-actions">
+                            <button id="edit-button" class="action-button">수정</button>
+                            <button id="delete-button" class="action-button">삭제</button>
+                        </div>
+                    </div>
+                </div>
+
+                <p id="review-text"></p>
+
+                <div class="heart-container">
+                    <img id="heart-icon" src="/assets/images/empty_heart.svg" alt="좋아요 버튼" class="heart-icon">
+                    <span id="review-likes">0</span>
+                </div>
+            </div>
+
+            <!-- 댓글 입력 영역 -->
+            <div class="comment-section">
+                <div class="comment-input-container">
+                    <img id="user-profile" src="/assets/images/default_profile.png" alt="내 프로필">
+                    <span id="comment-username">닉네임</span>
+                    <input type="text" id="comment-input" placeholder="댓글을 입력해주세요">
+                </div>
+                <!-- 댓글 리스트 -->
+                <ul id="comment-list"></ul>
+            </div>
+        </section>
+    </main>
+
+    <script src="/scripts/review-detail.js"></script>
+    <script src="/scripts/common.js"></script>
+</body>
+</html>

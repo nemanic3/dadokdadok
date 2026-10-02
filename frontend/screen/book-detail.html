@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>책 상세 정보</title>
+    <link rel="stylesheet" href="../styles/global.css">
+    <link rel="stylesheet" href="../styles/book-detail.css">
+</head>
+<body>
+  <header>
+      <nav class="navbar">
+          <a href="main.html" class="logo">
+              <img src="../assets/images/logo.png" alt="다독다독 로고">
+              <span class="logo-text"><span class="first">다독</span><span class="second">다독</span></span>
+          </a>
+          <ul class="nav-links">
+              <li><a href="library.html">내 서재</a></li>
+              <li><a href="goals.html" class="active">목표 및 통계</a></li>
+          </ul>
+          <input type="text" class="search-bar" placeholder="검색">
+          <div class="user-actions">
+              <a href="index.html" class="login-button" id="login-btn">로그인</a>
+              <a href="mypage.html" class="profile-button" id="profile-btn" style="display: none;">내 정보</a>
+              <button class="logout-button" id="logout-btn" style="display: none;">로그아웃</button>
+          </div>
+      </nav>
+  </header>
+
+    <main class="book-detail-container">
+        <div class="book-main-info">
+            <div class="book-cover">
+                <img id="book-image" src="" alt="책 표지">
+            </div>
+            <div class="book-info">
+                <h1 id="book-title"></h1>
+                <p id="book-author"></p>
+                <p id="book-publisher"></p>
+                <a id="book-link" href="#" target="_blank">링크로 연결하기</a>
+            </div>
+        </div>
+
+        <div class="reviews-recommendations">
+            <section class="reviews-section">
+                <div class="reviews-header">
+                    <h2>다른 사용자의 리뷰</h2>
+                    <button id="write-review-btn">리뷰 쓰기</button> <!-- ✅ 리뷰 쓰기 버튼 추가 -->
+                </div>
+                <div id="reviews-list">
+                    <!-- JS에서 동적으로 추가될 리뷰 목록 -->
+                </div>
+            </section>
+            <section class="recommendations">
+                <h2>연관 추천 도서</h2>
+                <div id="recommendation-grid"></div>
+            </section>
+        </div>
+    </main>
+
+    <script src="../scripts/book-detail.js"></script>
+    <script src="../scripts/common.js"></script>
+</body>
+</html>
