@@ -37,6 +37,6 @@ def monthly_counts(user, year, month=None):
     rows = (period_records(user, year, month)
             .annotate(period=TruncMonth('created_at', tzinfo=timezone.get_default_timezone()))
             .values('period').annotate(count=Count('book_id', distinct=True)).order_by('period'))
-    counts = {row['period'].strftime('%Y-%m'): row['count'] for row in rows}
+    counts = {f"{row['period'].year:04d}-{row['period'].month:02d}": row['count'] for row in rows}
     months = [month] if month is not None else range(1, 13)
     return {f'{year:04d}-{m:02d}': counts.get(f'{year:04d}-{m:02d}', 0) for m in months}
