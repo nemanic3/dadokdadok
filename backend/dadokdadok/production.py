@@ -13,9 +13,9 @@ if EMAIL_BACKEND != 'user.email_backend.ResendEmailBackend' or not RESEND_API_KE
     raise ImproperlyConfigured('Free Render production requires Resend EMAIL_BACKEND and RESEND_API_KEY.')
 if DEFAULT_FROM_EMAIL == 'noreply@localhost' or not DEFAULT_FROM_EMAIL:
     raise ImproperlyConfigured('Production requires a verified DEFAULT_FROM_EMAIL.')
-if PASSWORD_RESET_URL != 'https://dodok.nemanic.dev/screen/find-account.html':
-    raise ImproperlyConfigured('Production recovery must use dodok.nemanic.dev HTTPS.')
-CSRF_TRUSTED_ORIGINS = ['https://dodok.nemanic.dev']
+if PASSWORD_RESET_URL != 'https://dadok.nemanic.dev/screen/find-account.html':
+    raise ImproperlyConfigured('Production recovery must use dadok.nemanic.dev HTTPS.')
+CSRF_TRUSTED_ORIGINS = ['https://dadok.nemanic.dev']
 # This service does not opt unrelated sibling subdomains into HSTS preload.
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 SECURE_HSTS_PRELOAD = False

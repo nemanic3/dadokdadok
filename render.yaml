@@ -35,4 +35,4 @@ services:
       - key: DEFAULT_FROM_EMAIL
         sync: false
       - key: PASSWORD_RESET_URL
-        value: https://dodok.nemanic.dev/screen/find-account.html
+        value: https://dadok.nemanic.dev/screen/find-account.html

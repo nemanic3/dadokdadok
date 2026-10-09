@@ -6,7 +6,7 @@
 
 - Pages 프로젝트: `dadokdadok`, GitHub `nemanic3/dadokdadok`, 운영 브랜치 `master`.
 - Pages 저장소 루트: `/`, 빌드 `python3 scripts/build_pages.py`, 출력 `dist`.
-- 공개 도메인: `dodok.nemanic.dev`. 기존 `nemanic-website` 및 다른 도메인/DNS를 변경하지 않는다.
+- 공개 도메인: `dadok.nemanic.dev`. 기존 `nemanic-website` 및 다른 도메인/DNS를 변경하지 않는다.
 - 기존 HTML/CSS/JS와 고정 프로필 SVG 6개·API가 반환하는 아이콘 SVG 8개를 Pages에 게시한다. 루트는 로그인 화면으로 이동하며 없는 경로는 404다. DB, 개발 자격정보, tests, node_modules는 게시하지 않는다.
 - Pages Functions는 `/api/*`만 고정 HTTPS Django origin으로 전달한다. JWT/POST/query를 유지하고 캐시를 금지하며 리디렉션을 따르지 않는다. API 설정이 없거나 preview 호스트면 503으로 차단한다.
 - Django는 Render Singapore 무료 서비스에서 `deploy/Dockerfile`로 실행한다. Django 개발 서버 대신 non-root Gunicorn 단일 sync worker를 사용한다. 저장은 Neon Singapore PostgreSQL 16에 하며 로컬 컨테이너 파일시스템에 DB를 저장하지 않는다.
@@ -20,7 +20,7 @@
 
 | 대상 | 이름 | 설정 |
 |---|---|---|
-| Pages 운영 | `PUBLIC_HOST` | `dodok.nemanic.dev` |
+| Pages 운영 | `PUBLIC_HOST` | `dadok.nemanic.dev` |
 | Pages 운영 | `DJANGO_ORIGIN` | 생성한 Render 서비스의 HTTPS origin, 경로/query 없음 |
 | Pages 운영 Secret | `ORIGIN_PROXY_SECRET` | Django와 동일한 신규 임의 secret, 32자 이상 |
 | Render | `DJANGO_SETTINGS_MODULE` | `dadokdadok.production` |
@@ -33,7 +33,7 @@
 | Render | `EMAIL_BACKEND` | `user.email_backend.ResendEmailBackend` |
 | Render Secret | `RESEND_API_KEY` | 검증된 발신 도메인의 발송 키 |
 | Render | `DEFAULT_FROM_EMAIL` | 검증된 발신 주소 |
-| Render | `PASSWORD_RESET_URL` | `https://dodok.nemanic.dev/screen/find-account.html` |
+| Render | `PASSWORD_RESET_URL` | `https://dadok.nemanic.dev/screen/find-account.html` |
 
 Preview 배포에 운영 origin/secret을 설정하지 않는다. 프런트에는 별도 API base나 비밀 값이 필요하지 않다. Render가 제공하는 `PORT`를 Gunicorn이 사용한다. `DJANGO_DB_PATH` 및 기존 SMTP 비밀번호는 이 운영 구성에서 사용하지 않는다.
 
