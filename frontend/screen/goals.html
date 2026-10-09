@@ -6,7 +6,7 @@
     <title>다독다독 - 목표 및 통계</title>
     <link rel="stylesheet" href="../styles/global.css">
     <link rel="stylesheet" href="../styles/main.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
@@ -16,16 +16,15 @@
 
         .goal-dashboard {
             width: 75%;
-            margin: 40px auto;
+            margin: 20px auto 40px;
         }
 
         /* 🔹 "목표 및 통계" 타이틀 */
         .goal-title {
             font-size: 2rem;
             font-weight: bold;
-            position: absolute;
-            left: 25%;
-            top: 100px;
+            position: static;
+            margin: 0 0 1rem 16.6667%;
         }
 
         /* 🔹 그래프 컨테이너 */
@@ -48,6 +47,7 @@
             color: #555;
         }
     </style>
+    <link rel="stylesheet" href="../styles/layout-fixes.css">
 </head>
 <body>
     <header>
@@ -73,25 +73,37 @@
         <h1 class="goal-title">목표 및 통계</h1>
 
         <div class="goal-settings">
-            <p>올해 목표: <strong id="goal-target">-</strong></p>
-            <p>현재 읽은 책: <strong id="goal-progress">-</strong></p>
+            <p id="statistics-basis">리뷰 기록일(created_at) 기준 도서 수입니다. 실제 완독일이 아님을 유의해 주세요. 기존 무기간 목표는 자동으로 올해 목표가 되지 않습니다.</p>
+            <label>조회 연도 <input id="goal-year" type="number" min="1" max="9999" step="1" aria-label="목표 연도"></label>
+            <button id="load-period" type="button">조회</button>
+            <p>연간 목표: <strong id="goal-target">0 권</strong></p>
+            <p>해당 연도 리뷰 기록 도서: <strong id="goal-progress">0 권</strong></p>
+            <label>연간 목표 권 수 <input id="annual-goal-input" type="number" min="1" step="1"></label>
+            <button id="save-annual-goal" type="button" disabled>연간 목표 저장</button>
+            <p><label>월 <select id="goal-month" aria-label="목표 월"></select></label></p>
+            <p>월간 목표: <strong id="monthly-goal-target">0 권</strong> / 해당 월 리뷰 기록 도서: <strong id="monthly-goal-progress">0 권</strong></p>
+            <label>월간 목표 권 수 <input id="monthly-goal-input" type="number" min="1" step="1"></label>
+            <button id="save-monthly-goal" type="button" disabled>월간 목표 저장</button>
+            <p id="goal-status" role="status" aria-live="polite"></p>
         </div>
 
         <div class="charts-container">
             <!-- 🎯 목표 달성률 차트 -->
             <div class="chart-box">
-                <h2 class="chart-title">올해 목표 달성 현황</h2>
+                <h2 class="chart-title">연간 목표 · 리뷰 기록 도서 현황</h2>
                 <canvas id="goalChart"></canvas>
             </div>
 
             <!-- 📊 1년 전체 월별 독서량 차트 -->
             <div class="chart-box">
-                <h2 class="chart-title">월별 독서량</h2>
+                <h2 class="chart-title">월별 리뷰 기록 도서 수</h2>
                 <canvas id="monthlyChart"></canvas>
             </div>
         </div>
     </main>
 
+    <script src="../scripts/security.js"></script>
+    <script src="../scripts/api.js"></script>
     <script src="../scripts/auth.js"></script>
     <script src="../scripts/common.js"></script>
     <script src="../scripts/goals.js"></script>

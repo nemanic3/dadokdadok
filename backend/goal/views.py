@@ -1,84 +1,75 @@
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.db import IntegrityError, transaction
+from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from django.db.models.functions import TruncMonth
-from django.db.models import Count
-from datetime import datetime
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from .models import Goal
+from .periods import parse_period, scope_name
 from .serializers import GoalSerializer
-from review.models import Review
+from .statistics import count_books, monthly_counts, period_metadata
+
+
+def select_goal(user, year, month):
+    goals = Goal.objects.filter(user=user).order_by('id')
+    if year is not None:
+        goals = goals.filter(year=year, month=month)
+    return goals.first()
+
+
+def goal_period(goal):
+    if goal is None:
+        return None
+    return {'year': goal.year, 'month': goal.month, 'scope': scope_name(goal.year, goal.month)}
+
 
 class GoalViewSet(ModelViewSet):
-    """
-    연간 목표 설정 (목표 책 수만 입력)
-    """
     serializer_class = GoalSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Goal.objects.filter(user=self.request.user)
+        queryset = Goal.objects.filter(user=self.request.user).order_by('id')
+        year, month = parse_period(self.request.query_params)
+        if year is not None:
+            queryset = queryset.filter(year=year, month=month)
+        return queryset
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        try:
+            with transaction.atomic():
+                serializer.save(user=self.request.user)
+        except IntegrityError:
+            # The database constraint also protects concurrent scoped creates.
+            raise ValidationError({'period': '해당 기간 목표가 이미 있습니다.'})
+
 
 class GoalProgressView(APIView):
-    """
-    목표 진행률 조회 (그래프 데이터 제공)
-    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        print("GoalProgressView called")
-        user = request.user
-        goal = Goal.objects.filter(user=user).first()
+        year, month = parse_period(request.query_params)
+        goal = select_goal(request.user, year, month)
+        # Preserve the original no-query progress 404 and all-time counting contract.
+        if goal is None and year is None:
+            return Response({'error': '설정된 목표가 없습니다.', **period_metadata(year, month)}, status=404)
+        total = goal.total_books if goal else 0
+        count = count_books(request.user, year, month)
+        return Response({'goal_id': goal.pk if goal else None, 'goal_period': goal_period(goal), 'goal_books': total,
+                         'read_books': count, 'progress': round(count / total * 100, 2) if total > 0 else 0,
+                         **period_metadata(year, month)})
 
-        if not goal:
-            return Response({"error": "설정된 목표가 없습니다."}, status=404)
-
-        # ✅ 사용자가 리뷰를 남긴 유니크한 책 개수 계산 (중복 리뷰 제외)
-        read_books_count = Review.objects.filter(user=user).values("book").distinct().count()
-
-        # ✅ 진행률 계산
-        progress = (read_books_count / goal.total_books) * 100 if goal.total_books > 0 else 0
-
-        return Response({
-            "goal_books": goal.total_books,
-            "read_books": read_books_count,
-            "progress": round(progress, 2)  # ✅ 소수점 2자리
-        }, status=200)
 
 class MonthlyReadingProgressView(APIView):
-    """
-    월별 독서량 조회 (그래프용 데이터)
-    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-        current_year = datetime.now().year
-
-        goal = Goal.objects.filter(user=user).first()
-        if not goal:
-            return Response({"error": "설정된 목표가 없습니다."}, status=404)
-
-        # ✅ 리뷰 작성 날짜(created_at) 기준으로 월별 독서량 집계
-        monthly_reading = (
-            Review.objects.filter(user=user, created_at__year=current_year)
-            .annotate(month=TruncMonth("created_at"))
-            .values("month")
-            .annotate(count=Count("id"))
-            .order_by("month")
-        )
-
-        # ✅ YYYY-MM 형식으로 변환
-        monthly_data = {entry["month"].strftime("%Y-%m"): entry["count"] for entry in monthly_reading}
-        monthly_data = {month: monthly_data.get(month, 0) for month in
-                        [f"{current_year}-{str(m).zfill(2)}" for m in range(1, 13)]}
-
-        return Response({
-            "goal_books": goal.total_books,
-            "read_books": sum(monthly_data.values()),
-            "monthly_reading": monthly_data
-        }, status=200)
+        year, month = parse_period(request.query_params)
+        goal = select_goal(request.user, year, month)
+        # No-query monthly data stays in the current local year, independent of a target.
+        year = year if year is not None else timezone.localtime().year
+        monthly = monthly_counts(request.user, year, month)
+        return Response({'goal_id': goal.pk if goal else None, 'goal_period': goal_period(goal),
+                         'goal_books': goal.total_books if goal else 0,
+                         'read_books': count_books(request.user, year, month),
+                         'monthly_reading': monthly, **period_metadata(year, month)})

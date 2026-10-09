@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title>아이디 / 비밀번호 찾기 - 다독다독</title>
     <link rel="stylesheet" href="../styles/global.css">
     <link rel="stylesheet" href="../styles/find-account.css">
+    <link rel="stylesheet" href="../styles/layout-fixes.css">
 </head>
 <body class="index-page">
 
@@ -51,8 +53,23 @@
             <button id="find-pw-btn" class="find-btn">비밀번호 재설정 링크 받기</button>
             <p id="pw-result" class="result-message"></p>
         </section>
+        <section class="find-section" id="reset-section" hidden>
+            <h2>새 비밀번호 설정</h2>
+            <form id="reset-password-form" hidden>
+                <input type="hidden" id="reset-uid">
+                <input type="hidden" id="reset-token">
+                <label for="reset-new-password">새 비밀번호</label>
+                <input type="password" id="reset-new-password" autocomplete="new-password" required>
+                <label for="reset-confirm-password">새 비밀번호 확인</label>
+                <input type="password" id="reset-confirm-password" autocomplete="new-password" required>
+                <button type="submit" class="find-btn">비밀번호 재설정</button>
+            </form>
+            <p id="reset-result" class="result-message" role="status"></p>
+        </section>
     </main>
 
+    <script src="../scripts/security.js"></script>
+    <script src="../scripts/api.js"></script>
     <script src="../scripts/find-account.js"></script>
     <script src="../scripts/common.js"></script>
 

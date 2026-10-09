@@ -6,6 +6,7 @@
     <title>로그인 성공 - 다독다독</title>
     <link rel="stylesheet" href="../styles/global.css">  <!-- 기존 스타일 유지 -->
     <link rel="stylesheet" href="../styles/welcome.css">  <!-- 새롭게 추가된 스타일 -->
+    <link rel="stylesheet" href="../styles/layout-fixes.css">
 </head>
 <body>
 
@@ -17,19 +18,9 @@
         <a href="main.html" class="main-page-button">메인페이지로</a>
     </main>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const username = localStorage.getItem("username") || "OO";
-            document.getElementById("user-name").textContent = username;
-
-            const logoutBtn = document.getElementById("logout-btn");
-            logoutBtn.addEventListener("click", () => {
-                localStorage.removeItem("token");
-                localStorage.removeItem("username");
-                window.location.href = "index.html";
-            });
-        });
-    </script>
+    <script src="../scripts/security.js"></script>
+    <script src="../scripts/api.js"></script>
+    <script src="../scripts/welcome.js"></script>
 
 </body>
 </html>

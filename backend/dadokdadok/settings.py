@@ -4,14 +4,31 @@ from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+import json
+from django.core.exceptions import ImproperlyConfigured
+DEBUG = os.environ.get('DJANGO_DEBUG', '1').lower() in ('1', 'true', 'yes')
+_local = {}
+if DEBUG and (BASE_DIR / 'local_credentials.json').exists():
+    _local = json.loads((BASE_DIR / 'local_credentials.json').read_text())
+def credential(name, required=False):
+    value = os.environ.get(name, _local.get(name, ''))
+    if required and not value:
+        raise ImproperlyConfigured(f'{name} must be explicitly configured.')
+    return value
+def csv_setting(name, default):
+    return [part.strip() for part in os.environ.get(name, default).split(',') if part.strip()]
+
+
 # ✅ 보안 설정 (SECRET_KEY는 배포 시 반드시 변경)
-SECRET_KEY = 'django-insecure-8pv46p(-rc3hi%-7k21p-^x(k!5s2f6wen-lip92(4ei4o7$f('  # 🚨 배포 시 변경 필수
+SECRET_KEY = credential('DJANGO_SECRET_KEY', required=True)
 
 # ✅ 개발 환경 설정 (배포 시 반드시 False)
-DEBUG = True  # 🚨 배포 시 False로 변경
+
 
 # ✅ 모든 호스트에서 접근 가능 (배포 시 특정 도메인만 허용)
-ALLOWED_HOSTS = ['*']  # 🚨 배포 시 ["yourdomain.com"]으로 변경
+ALLOWED_HOSTS = csv_setting('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,[::1]' if DEBUG else '')
+if not DEBUG and (not ALLOWED_HOSTS or '*' in ALLOWED_HOSTS):
+    raise ImproperlyConfigured('Production requires explicit non-wildcard DJANGO_ALLOWED_HOSTS.')
 
 # ✅ INSTALLED_APPS 설정
 INSTALLED_APPS = [
@@ -34,20 +51,18 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 # ✅ CORS 설정 (배포 시 특정 도메인만 허용)
-CORS_ALLOW_ALL_ORIGINS = True  # 🚨 배포 시 False로 변경
-CORS_ALLOWED_ORIGINS = [
-    "http://127.0.0.1:5500",
-]
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = csv_setting('DJANGO_CORS_ALLOWED_ORIGINS', 'http://127.0.0.1:5500,http://localhost:5500' if DEBUG else '')
 
 ROOT_URLCONF = 'dadokdadok.urls'
 
@@ -73,7 +88,7 @@ WSGI_APPLICATION = 'dadokdadok.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.environ.get('DJANGO_DB_PATH', str(BASE_DIR / 'db.sqlite3')),
     }
 }
 
@@ -93,7 +108,8 @@ USE_TZ = True
 
 # ✅ Static & Media 파일 설정
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").is_dir() else []
+STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -109,7 +125,8 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',  # ✅ 기본 권한 변경
-    ]
+    ],
+    'DEFAULT_THROTTLE_RATES': {'auth': '20/minute', 'recovery': '5/hour', 'book': '60/minute'},
 }
 
 # ✅ JWT 설정 (토큰 만료 시간 조절 가능)
@@ -119,7 +136,7 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,
+    "SIGNING_KEY": credential('JWT_SIGNING_KEY', required=not DEBUG) or SECRET_KEY,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
@@ -127,7 +144,28 @@ SIMPLE_JWT = {
 LOGIN_URL = '/user/login/'
 LOGOUT_REDIRECT_URL = '/'
 
-# ✅ 네이버 API 설정 (하드코딩된 값 유지)
-NAVER_CLIENT_ID = "XuZkPyhdBVtFtXAvM4x9"
-NAVER_CLIENT_SECRET = "qc9LqfIhrj"
+# 네이버 자격정보: 환경변수 / 비추적 개발 로컬 파일
+NAVER_CLIENT_ID = credential('NAVER_CLIENT_ID')
+NAVER_CLIENT_SECRET = credential('NAVER_CLIENT_SECRET')
 NAVER_BOOKS_API_URL = "https://openapi.naver.com/v1/search/book.json"
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend' if DEBUG else '').strip()
+# Production currently supports only the explicit SMTP delivery backend.
+# Console/file/dummy/locmem must never receive live recovery credentials.
+if not DEBUG and EMAIL_BACKEND != 'django.core.mail.backends.smtp.EmailBackend':
+    raise ImproperlyConfigured('Production requires explicit SMTP delivery EMAIL_BACKEND.')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', '1').lower() in ('1', 'true', 'yes')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@localhost')
+PASSWORD_RESET_URL = os.environ.get('PASSWORD_RESET_URL', 'http://127.0.0.1:5500/screen/find-account.html')
+PASSWORD_RESET_TIMEOUT = 3600
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'

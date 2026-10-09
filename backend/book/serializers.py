@@ -40,7 +40,9 @@ class BookWithReviewSerializer(serializers.ModelSerializer):
 
     def get_reviews(self, obj):
         """ 최신 5개의 리뷰를 가져와 정리 """
-        reviews = Review.objects.filter(book=obj).order_by('-created_at')[:5]
+        reviews = getattr(obj, 'recent_reviews', None)
+        if reviews is None:
+            reviews = Review.objects.filter(book=obj).select_related('user').order_by('-created_at', '-pk')[:5]
         return [
             {
                 "id": review.id,

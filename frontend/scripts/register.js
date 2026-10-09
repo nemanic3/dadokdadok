@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // 사용자 입력 값 가져오기
       const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
+      const password = document.getElementById("password").value;
       const nickname = document.getElementById("nickname").value.trim();
       const email = document.getElementById("email").value.trim();
 
@@ -25,7 +25,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
       try {
           // 회원가입 API 요청
-          const response = await fetch("http://127.0.0.1:8000/api/user/signup/", {
+          const response = await AppAPI.request("/api/user/signup/", {
+              auth: false,
               method: "POST",
               headers: {
                   "Content-Type": "application/json"

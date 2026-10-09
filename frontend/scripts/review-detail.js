@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log("✅ DOMContentLoaded 이벤트 발생");
 
     const params = new URLSearchParams(window.location.search);
     const reviewId = params.get("id");
@@ -27,6 +26,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let isLiked = false;
     let likesCount = 0;
+    const session = AppAPI.bindSession(() => {
+        currentUser = null;
+        isLiked = false;
+        if (commentUsername) commentUsername.textContent = '';
+        if (commentInput) { commentInput.value = ''; commentInput.disabled = true; }
+        if (userProfile) SafeDOM.image(userProfile, SafeDOM.profileFallback, SafeDOM.profileFallback);
+        if (heartIcon) heartIcon.src = '/assets/images/empty_heart.svg';
+        if (editButton) editButton.style.display = 'none';
+        if (deleteButton) deleteButton.style.display = 'none';
+        commentList?.querySelectorAll('.edit-comment, .delete-comment').forEach(button => button.remove());
+    });
 
     // 초기에 수정/삭제 버튼 숨기기
     if (editButton) editButton.style.display = "none";
@@ -41,20 +51,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 현재 로그인한 사용자 정보 가져오기
     if (token) {
         try {
-            const userResponse = await fetch("http://127.0.0.1:8000/api/user/me/", {
+            const userResponse = await AppAPI.request("/api/user/me/", {
+                session,
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (userResponse.ok) {
                 currentUser = await userResponse.json();
-                console.log("✅ 현재 로그인한 사용자:", currentUser);
+                AppAPI.assertSession(session);
 
                 // 댓글 입력창에 사용자 정보 표시
                 if (commentUsername) commentUsername.textContent = currentUser.nickname;
                 if (userProfile) {
-                    userProfile.src = `http://127.0.0.1:8000/api/user/profile/${currentUser.nickname}/`;
-                    userProfile.onerror = () => {
-                        userProfile.src = "/assets/images/profile_image.svg";
-                    };
+                    SafeDOM.image(userProfile, SafeDOM.profile(currentUser.profile_image), SafeDOM.profileFallback);
                 }
             }
         } catch (error) {
@@ -64,11 +72,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         // 리뷰 데이터 불러오기
-        const reviewResponse = await fetch(`http://127.0.0.1:8000/api/review/${reviewId}/`);
+        const reviewResponse = await AppAPI.request(`/api/review/${encodeURIComponent(reviewId)}/`, { auth: false });
         if (!reviewResponse.ok) throw new Error("리뷰 데이터를 불러올 수 없습니다.");
 
         const review = await reviewResponse.json();
-        console.log("✅ 리뷰 데이터:", review);
 
         // 리뷰 작성자와 현재 사용자가 같은지 확인
         const isAuthor = currentUser && currentUser.nickname === review.user_nickname;
@@ -78,17 +85,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (editButton) {
                 editButton.style.display = "inline-block";
                 editButton.addEventListener("click", () => {
-                    window.location.href = `review-write.html?id=${reviewId}`;
+                    if (!AppAPI.isCurrent(session)) return;
+                    window.location.href = `review-write.html?id=${encodeURIComponent(reviewId)}`;
                 });
             }
 
             if (deleteButton) {
                 deleteButton.style.display = "inline-block";
                 deleteButton.addEventListener("click", async () => {
+                    if (!AppAPI.isCurrent(session)) return;
                     if (!confirm("정말 삭제하시겠습니까?")) return;
 
                     try {
-                        const deleteResponse = await fetch(`http://127.0.0.1:8000/api/review/${reviewId}/`, {
+                        const deleteResponse = await AppAPI.request(`/api/review/${encodeURIComponent(reviewId)}/`, {
+                            session,
                             method: "DELETE",
                             headers: {
                                 "Authorization": `Bearer ${token}`,
@@ -96,6 +106,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             }
                         });
 
+                        AppAPI.assertSession(session);
                         if (deleteResponse.ok) {
                             alert("리뷰가 삭제되었습니다.");
                             window.location.href = "library.html";
@@ -114,30 +125,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         // 리뷰 정보 표시
         if (reviewAuthor) reviewAuthor.textContent = review.user_nickname;
         if (reviewAuthorImage) {
-            reviewAuthorImage.src = `http://127.0.0.1:8000/api/user/profile/${review.user_nickname}/`;
-            reviewAuthorImage.onerror = () => {
-                reviewAuthorImage.src = "/assets/images/profile_image.svg";
-            };
+            SafeDOM.image(reviewAuthorImage, SafeDOM.profile(review.user_profile_image || review.profile_image), SafeDOM.profileFallback);
         }
 
         if (reviewDate) reviewDate.textContent = formatDate(review.created_at);
         if (reviewText) reviewText.textContent = review.content;
-        likesCount = review.likes_count;
+        likesCount = review.likes_count ?? 0;
         if (reviewLikes) reviewLikes.textContent = likesCount;
-        if (ratingValue) ratingValue.textContent = review.rating.toFixed(1);
+        if (ratingValue) ratingValue.textContent = review.rating == null ? '평점 없음' : SafeDOM.rating(review.rating).toFixed(1);
 
         // 별점 시각화
-        if (reviewRating) reviewRating.innerHTML = generateStars(review.rating);
+        if (reviewRating) reviewRating.replaceChildren(...generateStars(review.rating));
 
         // 좋아요 상태 확인
-        if (token && heartIcon) {
+        // 공개 상세는 익명으로 조회하므로 false는 로그인 사용자의 상태가 아니다.
+        // 로그인 사용자의 저장된 상태는 인증된 liked API로 별도 확인한다.
+        if (heartIcon && review.is_liked === true) {
+            isLiked = review.is_liked;
+            heartIcon.src = `/assets/images/${isLiked ? "full" : "empty"}_heart.svg`;
+        } else if (token && heartIcon) {
             try {
-                const likedResponse = await fetch("http://127.0.0.1:8000/api/review/liked/", {
+                const likedResponse = await AppAPI.request("/api/review/liked/", {
+                    session,
                     headers: { "Authorization": `Bearer ${token}` }
                 });
                 if (likedResponse.ok) {
-                    const likedReviews = await likedResponse.json();
-                    isLiked = likedReviews.some(item => item.review_id === review.id);
+                    const likedReviews = SafeDOM.list(await likedResponse.json());
+                    AppAPI.assertSession(session);
+                    isLiked = likedReviews.some(item => String(item.review_id) === String(review.id));
                     heartIcon.src = `/assets/images/${isLiked ? 'full' : 'empty'}_heart.svg`;
                 }
             } catch (error) {
@@ -148,8 +163,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         // 좋아요 토글 이벤트
         if (heartIcon && token) {
             heartIcon.addEventListener("click", async () => {
+                if (!AppAPI.isCurrent(session)) return;
                 try {
-                    const response = await fetch(`http://127.0.0.1:8000/api/review/${reviewId}/like/`, {
+                    const response = await AppAPI.request(`/api/review/${encodeURIComponent(reviewId)}/like/`, {
+                        session,
                         method: "POST",
                         headers: { "Authorization": `Bearer ${token}` }
                     });
@@ -157,8 +174,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     if (!response.ok) throw new Error("좋아요 처리 실패");
 
                     const data = await response.json();
+                    AppAPI.assertSession(session);
                     isLiked = data.message === "Like added";
-                    likesCount = data.likes_count;
+                    likesCount = data.likes_count ?? 0;
 
                     heartIcon.src = `/assets/images/${isLiked ? 'full' : 'empty'}_heart.svg`;
                     if (reviewLikes) reviewLikes.textContent = likesCount;
@@ -171,18 +189,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // 책 정보 불러오기
         if (bookImage && bookTitle) {
-            const bookResponse = await fetch(`http://127.0.0.1:8000/api/book/isbn/${review.isbn}/`);
+            const bookResponse = await AppAPI.request(`/api/book/isbn/${encodeURIComponent(review.isbn)}/`, { auth: false });
             if (bookResponse.ok) {
                 const book = await bookResponse.json();
-                bookImage.src = book.image_url;
+                SafeDOM.image(bookImage, book.image_url);
                 bookTitle.textContent = book.title;
 
                 bookImage.addEventListener("click", () => {
-                    window.location.href = `book-detail.html?isbn=${review.isbn}`;
+                    window.location.href = `book-detail.html?isbn=${encodeURIComponent(review.isbn)}`;
                 });
             } else {
                 bookTitle.textContent = "책 정보를 찾을 수 없습니다.";
-                bookImage.src = "/assets/images/no_image.png";
+                SafeDOM.image(bookImage, null);
             }
         }
 
@@ -206,7 +224,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function loadComments() {
         try {
-            const response = await fetch(`http://127.0.0.1:8000/api/review/${reviewId}/comments/list/`, {
+            const response = await AppAPI.request(`/api/review/${encodeURIComponent(reviewId)}/comments/list/`, {
+                auth: false,
                 headers: token ? { "Authorization": `Bearer ${token}` } : {}
             });
 
@@ -214,63 +233,60 @@ document.addEventListener("DOMContentLoaded", async () => {
                 throw new Error(await response.text());
             }
 
-            const comments = await response.json();
+            const comments = SafeDOM.list(await response.json());
             if (commentList) {
-                commentList.innerHTML = comments.map(comment => `
-                    <li class="comment-item">
-                        <div class="comment-content">
-                            <img src="http://127.0.0.1:8000/api/user/profile/${comment.user_nickname}/"
-                                 alt="프로필" class="comment-profile"
-                                 onerror="this.src='/assets/images/profile_image.svg'">
-                            <div class="comment-info">
-                                <span class="comment-author">${comment.user_nickname}</span>
-                                <span class="comment-text">${comment.content}</span>
-                            </div>
-                            ${currentUser && currentUser.nickname === comment.user_nickname ? `
-                               
-                            ` : ''}
-                        </div>
-                    </li>
-                `).join('');
-
-                // 삭제 버튼에 이벤트 리스너 추가
-                document.querySelectorAll('.delete-comment').forEach(button => {
-                    button.addEventListener('click', async (e) => {
-                        if (!confirm('댓글을 삭제하시겠습니까?')) return;
-
-                        const commentId = e.target.dataset.commentId;
-                        try {
-                            const response = await fetch(`http://127.0.0.1:8000/api/review/${reviewId}/comments/`, {
-                                method: 'DELETE',
-                                headers: {
-                                    'Authorization': `Bearer ${token}`,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ comment_id: commentId })
-                            });
-
-                            if (response.ok) {
-                                await loadComments();
-                            } else {
-                                const errorText = await response.text();
-                                throw new Error(errorText);
-                            }
-                        } catch (error) {
-                            console.error('🚨 댓글 삭제 오류:', error);
-                            alert('댓글 삭제 중 오류가 발생했습니다.');
-                        }
-                    });
-                });
+                const S = SafeDOM;
+                commentList.replaceChildren(...comments.map(comment => {
+                    const item = S.element('li', 'comment-item');
+                    const content = S.element('div', 'comment-content');
+                    const image = S.element('img', 'comment-profile'); image.alt = '프로필'; S.image(image, S.profile(comment.profile_image), S.profileFallback);
+                    const info = S.element('div', 'comment-info');
+                    info.append(S.element('span', 'comment-author', comment.user_nickname), S.element('span', 'comment-text', comment.content));
+                    content.append(image, info);
+                    const ownsComment = currentUser && (comment.user != null ? String(currentUser.id) === String(comment.user) : currentUser.nickname === comment.user_nickname);
+                    if (ownsComment) {
+                        const edit = S.element('button', 'edit-comment action-button', '수정'); edit.type = 'button';
+                        const remove = S.element('button', 'delete-comment action-button', '삭제'); remove.type = 'button';
+                        edit.addEventListener('click', async () => {
+                            const updated = prompt('댓글을 수정하세요.', S.text(comment.content));
+                            if (updated == null || !updated.trim()) return;
+                            await changeComment('PATCH', comment.id, updated.trim(), edit);
+                        });
+                        remove.addEventListener('click', async () => {
+                            if (confirm('댓글을 삭제하시겠습니까?')) await changeComment('DELETE', comment.id, undefined, remove);
+                        });
+                        content.append(edit, remove);
+                    }
+                    item.append(content); return item;
+                }));
             }
         } catch (error) {
             console.error("🚨 댓글 불러오기 오류:", error);
             if (commentList) {
-                commentList.innerHTML = '<li class="comment-error">댓글을 불러오는 중 오류가 발생했습니다.</li>';
+                SafeDOM.message(commentList, '댓글을 불러오는 중 오류가 발생했습니다.', 'comment-error', 'li');
             }
         }
     }
 
+    async function changeComment(method, id, content, button) {
+        if (!AppAPI.isCurrent(session)) return;
+        button.disabled = true;
+        try {
+            const body = { comment_id: id };
+            if (content !== undefined) body.content = content;
+            const result = await AppAPI.request(`/api/review/${encodeURIComponent(reviewId)}/comments/`, {
+                session,
+                method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+            });
+            if (!result.ok) throw new Error('댓글 변경 실패');
+            AppAPI.assertSession(session);
+            await loadComments();
+        } catch { alert('댓글을 변경하지 못했습니다. 다시 시도해주세요.'); }
+        finally { button.disabled = false; }
+    }
+
     async function submitComment() {
+        if (!AppAPI.isCurrent(session)) return;
         const content = commentInput.value.trim();
         if (!content) return;
 
@@ -280,7 +296,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         try {
-            const response = await fetch(`http://127.0.0.1:8000/api/review/${reviewId}/comments/`, {
+            const response = await AppAPI.request(`/api/review/${encodeURIComponent(reviewId)}/comments/`, {
+                session,
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -294,6 +311,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 throw new Error(errorText);
             }
 
+            AppAPI.assertSession(session);
             commentInput.value = "";
             await loadComments();
         } catch (error) {
@@ -304,7 +322,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function formatDate(dateString) {
+    if (!dateString) return '-';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '-';
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -312,14 +332,10 @@ function formatDate(dateString) {
 }
 
 function generateStars(rating) {
-    return [...Array(5)].map((_, i) => {
-        let starType;
-        const difference = rating - i;
-
-        if (difference >= 1) starType = "full_star";
-        else if (difference > 0) starType = "half_star";
-        else starType = "empty_star";
-
-        return `<img src="/assets/images/${starType}.svg" alt="별점" class="star-icon">`;
-    }).join('');
+    const value = SafeDOM.rating(rating);
+    return Array.from({ length: 5 }, (_, index) => {
+        const difference = value - index;
+        const type = difference >= 1 ? 'full_star' : difference > 0 ? 'half_star' : 'empty_star';
+        const image = SafeDOM.element('img', 'star-icon'); image.alt = '별점'; image.src = '/assets/images/' + type + '.svg'; return image;
+    });
 }

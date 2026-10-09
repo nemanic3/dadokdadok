@@ -32,10 +32,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let selectedRating = 0;
     let currentReviewData = null;
+    let reviewLoaded = !reviewId;
+    const session = AppAPI.bindSession(() => {
+        currentReviewData = null;
+        reviewLoaded = false;
+        selectedRating = 0;
+        if (reviewTextElement) reviewTextElement.value = '';
+        if (reviewAuthor) reviewAuthor.textContent = '';
+        if (reviewDate) reviewDate.textContent = '';
+        if (reviewAuthorImage) SafeDOM.image(reviewAuthorImage, SafeDOM.profileFallback, SafeDOM.profileFallback);
+        updateStarsUI(0);
+        if (publishReviewButton) publishReviewButton.disabled = true;
+        if (saveReviewButton) saveReviewButton.disabled = true;
+    });
+    if (publishReviewButton) publishReviewButton.disabled = !reviewLoaded;
 
     try {
         // 사용자 정보 불러오기
-        const userResponse = await fetch("http://127.0.0.1:8000/api/user/me/", {
+        const userResponse = await AppAPI.request("/api/user/me/", {
+            session,
             headers: { "Authorization": `Bearer ${token}` }
         });
 
@@ -44,16 +59,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const user = await userResponse.json();
+        AppAPI.assertSession(session);
         if (reviewAuthorImage) {
-            reviewAuthorImage.src = `http://127.0.0.1:8000/api/user/profile/${user.nickname}`;
-            reviewAuthorImage.onerror = () => { reviewAuthorImage.src = "../assets/images/profile_image.svg"; };
+            SafeDOM.image(reviewAuthorImage, SafeDOM.profile(user.profile_image), SafeDOM.profileFallback);
         }
         if (reviewAuthor) reviewAuthor.textContent = user.nickname;
         if (reviewDate) reviewDate.textContent = formatDate(new Date());
 
         // 수정 모드인 경우 기존 리뷰 데이터 불러오기
         if (reviewId) {
-            const reviewResponse = await fetch(`http://127.0.0.1:8000/api/review/${reviewId}/`, {
+            const reviewResponse = await AppAPI.request(`/api/review/${encodeURIComponent(reviewId)}/`, {
+                session,
                 headers: { "Authorization": `Bearer ${token}` }
             });
 
@@ -62,7 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             currentReviewData = await reviewResponse.json();
-            console.log("✅ 불러온 리뷰 데이터:", currentReviewData);
+            AppAPI.assertSession(session);
 
             // 기존 데이터로 폼 초기화
             if (reviewTextElement) reviewTextElement.value = currentReviewData.content;
@@ -73,36 +89,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // ISBN 설정 (수정 모드에서는 리뷰 데이터의 ISBN 사용)
             isbn = currentReviewData.isbn;
+            reviewLoaded = true;
         }
 
         // ISBN이 있으면 책 정보 불러오기
         if (isbn) {
-            console.log("✅ 책 정보 불러오기 시작 - ISBN:", isbn);
-            const bookResponse = await fetch(`http://127.0.0.1:8000/api/book/isbn/${isbn}/`);
+            const bookResponse = await AppAPI.request(`/api/book/isbn/${encodeURIComponent(isbn)}/`, { auth: false });
             if (!bookResponse.ok) throw new Error("책 정보를 불러올 수 없습니다.");
             const book = await bookResponse.json();
-            console.log("✅ 불러온 책 정보:", book);
+            AppAPI.assertSession(session);
 
             if (ratingbookTitle) ratingbookTitle.textContent = book.title;
             if (bookTitle) bookTitle.textContent = book.title;
             if (bookImage) {
-                bookImage.src = book.image_url || "../assets/images/no_image.png";
-                bookImage.onerror = () => { bookImage.src = "../assets/images/no_image.png"; };
+                SafeDOM.image(bookImage, book.image_url);
                 bookImage.style.cursor = "pointer";
                 bookImage.addEventListener("click", () => {
-                    window.location.href = `book-detail.html?isbn=${isbn}`;
+                    window.location.href = `book-detail.html?isbn=${encodeURIComponent(isbn)}`;
                 });
             }
         }
 
     } catch (error) {
         console.error("🚨 데이터 불러오기 오류:", error);
+        if (!reviewLoaded) alert('리뷰를 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+    } finally {
+        if (publishReviewButton) publishReviewButton.disabled = !AppAPI.isCurrent(session) || !reviewLoaded;
     }
 
     // 별점 기능 추가
     stars.forEach((star, index) => {
         star.addEventListener("mousemove", (event) => updateStars(event, star, index));
         star.addEventListener("click", (event) => {
+            if (!AppAPI.isCurrent(session)) return;
             selectedRating = getStarRating(event, star, index);
             updateStarsUI(selectedRating);
         });
@@ -134,6 +153,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (publishReviewButton) {
         publishReviewButton.textContent = reviewId ? "수정" : "발행";
         publishReviewButton.addEventListener("click", async () => {
+            if (!AppAPI.isCurrent(session) || !reviewLoaded) return;
             const content = reviewTextElement.value.trim();
             if (!content) {
                 alert("리뷰 내용을 입력해주세요.");
@@ -142,13 +162,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const requestBody = { isbn, content, rating: selectedRating };
             const url = reviewId ? 
-                `http://127.0.0.1:8000/api/review/${reviewId}/` :
-                "http://127.0.0.1:8000/api/review/";
+                `/api/review/${encodeURIComponent(reviewId)}/` :
+                "/api/review/";
 
             const method = reviewId ? "PUT" : "POST";
 
             try {
-                const response = await fetch(url, {
+                const response = await AppAPI.request(url, {
+                    session,
                     method,
                     headers: {
                         "Authorization": `Bearer ${token}`,
@@ -158,7 +179,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
 
                 const responseData = await response.json();
-                console.log("📢 서버 응답 데이터:", responseData);
+                AppAPI.assertSession(session);
 
                 if (!response.ok) throw new Error(responseData.detail || "리뷰 처리 실패");
 

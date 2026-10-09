@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 from .views import (
-    ReviewViewSet, LikeReviewView, CommentView, CommentListView,
+    ReviewViewSet, LikeReviewView, LikedReviewsView, CommentView, CommentDetailView, CommentListView,
     RecentReviewView, MyLibraryView, BookReviewsView, StarIconsView, HeartIconsView, IconsView
 )
 
@@ -9,9 +9,11 @@ router = DefaultRouter()
 router.register('', ReviewViewSet, basename='review')
 
 urlpatterns = [
+    path('liked/', LikedReviewsView.as_view(), name='liked_reviews'),
     path('<int:review_id>/like/', LikeReviewView.as_view(), name='like_review'),
     path('<int:review_id>/comments/', CommentView.as_view(), name='comment_review'),
     path('<int:review_id>/comments/list/', CommentListView.as_view(), name='list_comments'),
+    path('<int:review_id>/comments/<int:comment_id>/', CommentDetailView.as_view(), name='comment_detail'),
 
     # ✅ 메인 페이지 - 최신 리뷰 도서 목록
     path('recent-reviews/', RecentReviewView.as_view(), name='recent_reviews'),

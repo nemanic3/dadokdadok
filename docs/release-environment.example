@@ -1,0 +1,24 @@
+# Reference template only; Django does not load this file automatically.
+# NEVER put real secrets in this tracked template.
+# Supply values through the deployment platform's private process environment.
+# Empty required values are intentional: this is NOT a ready-to-run deployment.
+DJANGO_DEBUG=0
+DJANGO_SECRET_KEY=
+JWT_SIGNING_KEY=
+DJANGO_ALLOWED_HOSTS=
+DJANGO_CORS_ALLOWED_ORIGINS=
+# Absolute SQLite path OUTSIDE the checkout, assigned after DB approval.
+DJANGO_DB_PATH=
+NAVER_CLIENT_ID=
+NAVER_CLIENT_SECRET=
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=
+EMAIL_PORT=587
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=
+EMAIL_USE_TLS=1
+DEFAULT_FROM_EMAIL=
+# HTTPS URL of /screen/find-account.html on the approved frontend origin.
+PASSWORD_RESET_URL=
+# No proxy/cache/static/media environment switches are implemented currently.
+# Resolve those infrastructure/code gates in docs/release-runbook.md first.

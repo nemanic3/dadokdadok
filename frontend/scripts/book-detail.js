@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log("✅ DOMContentLoaded 이벤트 발생");
 
   const bookImage = document.getElementById("book-image");
   const bookTitle = document.getElementById("book-title");
@@ -8,6 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const bookLink = document.getElementById("book-link"); 
   const reviewsList = document.getElementById("reviews-list");
   const recommendationsList = document.getElementById("recommendation-grid"); 
+  const session = AppAPI.bindSession(() => { recommendationsList?.replaceChildren(); });
 
   const params = new URLSearchParams(window.location.search);
   const isbn = params.get("isbn");
@@ -18,33 +18,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
   }
 
-  let bookUrl = `https://search.shopping.naver.com/book/catalog/${isbn}`; 
+  let bookUrl = '';
 
   
   // ✅ 책 정보 가져오기
   async function loadBookDetails() {
       try {
-          const response = await fetch(`http://127.0.0.1:8000/api/book/isbn/${isbn}/`);
+          const response = await AppAPI.request(`/api/book/isbn/${encodeURIComponent(isbn)}/`, { auth: false });
           if (!response.ok) throw new Error("책 정보를 불러올 수 없습니다.");
 
           const book = await response.json();
-          bookImage.src = book.image_url;
+          SafeDOM.image(bookImage, book.image_url);
           bookTitle.textContent = book.title;
-          bookAuthor.textContent = `${book.author} / ${book.translator || "번역 없음"}`;
-          bookPublisher.textContent = `${book.publisher} / ${book.published_date}`;
+          bookAuthor.textContent = `${SafeDOM.text(book.author, "저자 정보 없음")} / ${book.translator || "번역 없음"}`;
+          bookPublisher.textContent = `${SafeDOM.text(book.publisher, "출판사 정보 없음")} / ${SafeDOM.text(book.published_date, "출판일 정보 없음")}`;
 
-          if (book.link) {
-              bookUrl = book.link;
-          }
-
+          bookUrl = SafeDOM.url(book.link);
+          SafeDOM.link(bookLink, bookUrl);
           bookLink.style.display = "inline-block";
-          bookLink.addEventListener("click", (event) => {
-              event.preventDefault();
-              window.open(bookUrl, "_blank");
-          });
-
-          console.log("📚 추천 도서 검색어:", book.title);
-          loadRecommendations(book.title);
+          loadRecommendations(SafeDOM.text(book.title));
 
       } catch (error) {
           console.error("책 정보 오류:", error);
@@ -55,7 +47,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadReviews() {
       try {
           const token = localStorage.getItem("token");
-          const response = await fetch(`http://127.0.0.1:8000/api/review/library/${isbn}/`, {
+          const response = await AppAPI.request(`/api/review/library/${encodeURIComponent(isbn)}/`, {
+              auth: false,
               method: "GET",
               headers: {
                   "Authorization": `Bearer ${token}`,
@@ -71,22 +64,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           if (!response.ok) throw new Error("리뷰를 불러올 수 없습니다.");
 
-          const reviews = await response.json();
-          reviewsList.innerHTML = reviews.length > 0
-              ? reviews.map(review => `
-                  <div class="review-card" data-review-id="${review.review_id}">
-                      <p><strong>${review.user}</strong>: ${review.content}</p>
-                      <p>⭐ ${review.rating} / 5</p>
-                      <p class="review-date">${review.created_at}</p>
-                  </div>
-              `).join("")
-              : "<p>아직 리뷰가 없습니다.</p>";
+          const reviews = SafeDOM.list(await response.json());
+          const S = SafeDOM;
+          reviewsList.replaceChildren(...reviews.map(review => {
+              const card = S.element('div', 'review-card'); card.dataset.reviewId = S.text(review.review_id);
+              const content = S.element('p'); content.append(S.element('strong', '', review.user), document.createTextNode(': ' + S.text(review.content)));
+              card.append(content, S.element('p', '', `⭐ ${S.text(review.rating)} / 5`), S.element('p', 'review-date', review.created_at));
+              return card;
+          }));
+          if (!reviews.length) S.message(reviewsList, '아직 리뷰가 없습니다.');
 
           document.querySelectorAll(".review-card").forEach(reviewCard => {
               reviewCard.addEventListener("click", () => {
                   const reviewId = reviewCard.getAttribute("data-review-id");
                   if (reviewId) {
-                      window.location.href = `review-detail.html?id=${reviewId}`;
+                      window.location.href = `review-detail.html?id=${encodeURIComponent(reviewId)}`;
                   } else {
                       alert("리뷰 정보를 불러오는 데 실패했습니다.");
                   }
@@ -128,32 +120,43 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       const searchQuery = shortenTitle(title);
-      console.log("🔍 최종 검색어:", searchQuery);
 
       try {
-          const response = await fetch(`http://127.0.0.1:8000/api/recommendation/naver/?query=${encodeURIComponent(searchQuery)}`);
-          if (!response.ok) throw new Error("추천 도서를 불러올 수 없습니다.");
+          let books = [];
+          if (localStorage.getItem('token')) {
+              try {
+                  const personalized = await AppAPI.request(`/api/recommendation/personalized/?isbn=${encodeURIComponent(isbn)}`, { session });
+                  if (personalized.ok) books = SafeDOM.list(await personalized.json());
+                  AppAPI.assertSession(session);
+              } catch {
+                  // Public related recommendations remain available after personal lookup failure.
+              }
+          }
+          if (!AppAPI.isCurrent(session)) return;
+          if (!books.length) {
+              const response = await AppAPI.request(`/api/recommendation/naver/?isbn=${encodeURIComponent(isbn)}&query=${encodeURIComponent(searchQuery)}`, { auth: false });
+              if (!response.ok) throw new Error("추천 도서를 불러올 수 없습니다.");
+              const data = await response.json();
+              if (data?.error) throw new Error("추천 조회 오류");
+              books = SafeDOM.list(data);
+          }
 
-          const books = await response.json();
-          console.log("📚 추천 도서 데이터:", books);
-
+          if (!AppAPI.isCurrent(session)) return;
           if (books.length > 0) {
-              recommendationsList.innerHTML = books.map(book => `
-                  <div class="recommendation-item">
-                      <a href="${book.link}" target="_blank">
-                          <img src="${book.image}" alt="${book.title}">
-                          <p>${book.title}</p>
-                      </a>
-                  </div>
-              `).join("");
+              const S = SafeDOM;
+              recommendationsList.replaceChildren(...books.map(book => {
+                  const item = S.element('div', 'recommendation-item');
+                  const link = S.element('a'); S.link(link, book.link);
+                  const image = S.element('img'); image.alt = S.text(book.title); S.image(image, book.image || book.image_url);
+                  link.append(image, S.element('p', '', book.title)); item.append(link); return item;
+              }));
           } else {
-              recommendationsList.innerHTML = "<p>추천할 도서가 없습니다.</p>";
+              SafeDOM.message(recommendationsList, '추천할 도서가 없습니다.');
               recommendationsList.style.minHeight = "200px";
           }
 
       } catch (error) {
-          console.error("❌ 추천 도서 오류:", error);
-          recommendationsList.innerHTML = "<p>추천 도서를 불러오는 중 오류가 발생했습니다.</p>";
+          SafeDOM.message(recommendationsList, '추천 도서를 불러오는 중 오류가 발생했습니다.');
           recommendationsList.style.minHeight = "200px";
       }
   }
@@ -175,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
               return;
           }
 
-          window.location.href = `review-write.html?isbn=${isbn}`; // 리뷰 작성 페이지로 이동
+          window.location.href = `review-write.html?isbn=${encodeURIComponent(isbn)}`; // 리뷰 작성 페이지로 이동
       });
   }
 });

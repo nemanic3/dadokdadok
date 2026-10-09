@@ -1,25 +1,41 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import AllowAny
-from .services import get_book_recommendations  # ✅ 함수 불러오기
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from book.services import NaverAPIError
+from book.identifiers import validate_isbn
+from book.parameters import bounded_integer
+from .services import get_book_recommendations, get_personalized_recommendations
+from .throttles import BookThrottle
+
 
 class NaverRecommendationView(APIView):
-    """
-    네이버 API를 활용한 추천 도서 리스트 반환 (책 상세 페이지에서 사용)
-    """
-    permission_classes = [AllowAny]  # ✅ 인증 없이 접근 가능
+    permission_classes = [AllowAny]
+    throttle_classes = [BookThrottle]
 
     def get(self, request):
-        isbn = request.GET.get("isbn", None)
-        query = request.GET.get("query", None)
-        display = request.GET.get("display", 5)  # 기본 5개 반환
-
+        isbn = request.GET.get('isbn')
+        query = request.GET.get('query')
+        display = bounded_integer(request.GET.get('display', 5), 'display', 1, 100)
+        if isbn is not None:
+            validate_isbn(isbn)
+        query = (query or '').strip()
+        if len(query) > 200:
+            return Response({'error': '검색어는 200자 이하여야 합니다.'}, status=400)
         if not isbn and not query:
-            return Response({"error": "ISBN 또는 검색어를 입력하세요."}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({'error': 'ISBN 또는 검색어를 입력하세요.'}, status=400)
         try:
-            recommended_books = get_book_recommendations(isbn=isbn, query=query, display=int(display))
-            return Response(recommended_books, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(get_book_recommendations(isbn=isbn, query=query, display=display))
+        except NaverAPIError as error:
+            return Response({'error': str(error.detail)}, status=error.status_code)
+
+
+class PersonalizedRecommendationView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [BookThrottle]
+
+    def get(self, request):
+        display = bounded_integer(request.GET.get('display', 5), 'display', 1, 100)
+        isbn = request.GET.get('isbn')
+        if isbn is not None:
+            validate_isbn(isbn)
+        return Response(get_personalized_recommendations(request.user, isbn=isbn, display=display))
