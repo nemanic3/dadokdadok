@@ -1,0 +1,24 @@
+.venv*/
+.venv/
+.venv-runtime/
+backend/local_credentials.json
+.local/
+__pycache__/
+*.py[cod]
+node_modules/
+.env
+.env.*
+!.env.example
+backend/db.sqlite3
+backend/db.sqlite3-*
+*.sqlite3
+*.sqlite3-*
+*.sqlite3-journal
+.idea/
+.pytest_cache/
+coverage/
+.coverage
+playwright-report/
+test-results/
+.DS_Store
+# Ignore new local artifacts only; existing tracked files remain unchanged.
