@@ -7,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.db import IntegrityError, transaction
+from dadokdadok.constraints import is_unique_conflict
 from django.db.models import Count, OuterRef, Subquery
 from .models import Review, Like, Comment
 from .permissions import IsReviewOwner
@@ -58,8 +59,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
                         link=book_data.get("link", ""),
                     )
             except IntegrityError as exc:
-                # Only the existing SQLite ISBN constraint is recoverable.
-                if str(exc) != 'UNIQUE constraint failed: book.isbn':
+                # Only the ISBN unique constraint is recoverable.
+                if not is_unique_conflict(exc, 'book', ('isbn',)):
                     raise
                 book = Book.objects.filter(isbn=isbn).first()
                 if book is None:

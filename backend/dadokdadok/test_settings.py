@@ -10,7 +10,7 @@ import unittest
 class EnvironmentSettingsTests(unittest.TestCase):
     def load_config(self, expect_failure=False, **overrides):
         env = {key: value for key, value in os.environ.items()
-               if not key.startswith(('DJANGO_', 'NAVER_', 'JWT_', 'EMAIL_'))}
+               if not key.startswith(('DJANGO_', 'NAVER_', 'JWT_', 'EMAIL_', 'DATABASE_'))}
         env.update(DJANGO_DEBUG='0', DJANGO_SECRET_KEY='isolated-config-regression-key-not-production',
                    JWT_SIGNING_KEY='isolated-config-regression-key-not-production',
                    DJANGO_ALLOWED_HOSTS='example.test', DJANGO_CORS_ALLOWED_ORIGINS='https://example.test',
@@ -58,6 +58,10 @@ class EnvironmentSettingsTests(unittest.TestCase):
     def test_production_explicit_smtp_backend_loads_without_sending_mail(self):
         config = self.load_config()
         self.assertEqual(config['email_backend'], 'django.core.mail.backends.smtp.EmailBackend')
+
+    def test_production_explicit_resend_backend_loads_without_sending_mail(self):
+        config = self.load_config(EMAIL_BACKEND='user.email_backend.ResendEmailBackend')
+        self.assertEqual(config['email_backend'], 'user.email_backend.ResendEmailBackend')
 
     def test_production_environment_disables_debug_and_wildcards(self):
         config = self.load_config()

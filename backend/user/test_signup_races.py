@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.db import IntegrityError
+from django.db import IntegrityError, connection
 from django.test import TransactionTestCase
 from rest_framework.test import APIClient
 
@@ -74,7 +74,12 @@ class SignupInsertRaceTests(TransactionTestCase):
             response = self.client.post('/api/user/signup/', self.payload, format='json')
         self.assertEqual(response.status_code, 500)
         self.assertIs(response.exc_info[0], IntegrityError)
-        self.assertIn('NOT NULL constraint failed: user.profile_image', str(response.exc_info[1]))
+        error = response.exc_info[1]
+        if connection.vendor == 'postgresql':
+            self.assertEqual(error.__cause__.sqlstate, '23502')
+            self.assertEqual(error.__cause__.diag.column_name, 'profile_image')
+        else:
+            self.assertIn('NOT NULL constraint failed: user.profile_image', str(error))
         self.assertEqual(get_user_model().objects.count(), 1)
         self.winner.refresh_from_db()
         self.assertEqual({key: getattr(self.winner, key) for key in self.winner_snapshot}, self.winner_snapshot)

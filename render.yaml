@@ -1,0 +1,38 @@
+# Free plan only. No Render database or paid persistent disk is provisioned.
+services:
+  - type: web
+    name: dadokdadok-api
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: master
+    dockerfilePath: ./deploy/Dockerfile
+    dockerContext: .
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: dadokdadok.production
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      - key: JWT_SIGNING_KEY
+        sync: false
+      - key: ORIGIN_PROXY_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: NAVER_CLIENT_ID
+        sync: false
+      - key: NAVER_CLIENT_SECRET
+        sync: false
+      - key: EMAIL_BACKEND
+        value: user.email_backend.ResendEmailBackend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+      - key: PASSWORD_RESET_URL
+        value: https://dodok.nemanic.dev/screen/find-account.html

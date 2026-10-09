@@ -1,0 +1,12 @@
+.git
+.env*
+.venv*
+.local
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/*.sqlite3*
+**/local_credentials.json
+backend/media
+frontend
+dist

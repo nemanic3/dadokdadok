@@ -9,6 +9,7 @@ from rest_framework.validators import UniqueValidator
 
 from .security import revoke_refresh_tokens
 from .profile_images import ProfileImageField
+from dadokdadok.constraints import is_unique_conflict
 
 User = get_user_model()
 
@@ -82,10 +83,10 @@ class SignupSerializer(EmailValidationMixin, serializers.ModelSerializer):
             with transaction.atomic():
                 return User.objects.create_user(**validated_data)
         except IntegrityError as exc:
-            # Match only existing SQLite unique constraints, never email or
+            # Match only existing unique constraints, never email or
             # unrelated integrity failures; preserve the field error contract.
             for field in ('username', 'nickname'):
-                if (str(exc) == f'UNIQUE constraint failed: user.{field}'
+                if (is_unique_conflict(exc, 'user', (field,))
                         and User.objects.filter(**{field: validated_data[field]}).exists()):
                     validator = next(value for value in self.fields[field].validators
                                      if isinstance(value, UniqueValidator))

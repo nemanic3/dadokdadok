@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.db import IntegrityError
+from django.db import IntegrityError, connection
 from django.db.models.query import QuerySet
 from django.test import TestCase, TransactionTestCase, override_settings
 from rest_framework.test import APIClient
@@ -141,7 +141,12 @@ class BookImportRaceTests(TransactionTestCase):
             response = self.post_review()
         self.assertEqual(response.status_code, 500)
         self.assertIs(response.exc_info[0], IntegrityError)
-        self.assertIn('NOT NULL', str(response.exc_info[1]))
+        error = response.exc_info[1]
+        if connection.vendor == 'postgresql':
+            self.assertEqual(error.__cause__.sqlstate, '23502')
+            self.assertEqual(error.__cause__.diag.column_name, 'title')
+        else:
+            self.assertIn('NOT NULL', str(error))
         self.assertEqual(Book.objects.filter(isbn=ISBN).count(), 1)
         self.winner.refresh_from_db()
         self.assertEqual(self.winner.title, 'Winning metadata')
@@ -183,7 +188,15 @@ class BookImportRaceTests(TransactionTestCase):
             response = self.post_review()
         self.assertEqual(response.status_code, 500)
         self.assertIs(response.exc_info[0], IntegrityError)
-        self.assertIn('review.id', str(response.exc_info[1]))
+        error = response.exc_info[1]
+        if connection.vendor == 'postgresql':
+            self.assertEqual(error.__cause__.sqlstate, '23505')
+            with connection.cursor() as cursor:
+                constraint = connection.introspection.get_constraints(cursor, 'review')[error.__cause__.diag.constraint_name]
+            self.assertTrue(constraint['primary_key'])
+            self.assertEqual(constraint['columns'], ['id'])
+        else:
+            self.assertIn('review.id', str(error))
         self.assertTrue(self.injected)
         self.review_winner.refresh_from_db()
         self.assertEqual(self.review_winner.content, 'Winning content')

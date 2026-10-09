@@ -129,6 +129,7 @@ DOM 회귀의 Django URLconf 검사는 `.venv-dev` → `.venv-runtime` → `.ven
 - `backend/goal/README.md`: 연간·월간 목표·legacy 데이터·통계 기준
 - `docs/api.md`: 전체 API와 오류·추천 계약
 - `docs/environment.md`: 개발/운영 설정
+- `docs/cloudflare-deployment.md`: Cloudflare Pages + 무료 Docker 서버 + PostgreSQL 배포 구성과 진행 상태
 - `docs/dependency-upgrade.md`: 지원 버전 업데이트와 실제 검증
 - `docs/completion-reverification.md`: 이전 작업 재검증·잔여 결함 수정·현재 최종 실행 결과·남은 승인 사항
 - `docs/commit-scope.md`: 기존 미커밋 구현·추가 재검증 수정의 커밋 범위와 보존·보안 검사

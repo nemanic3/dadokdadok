@@ -50,6 +50,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'dadokdadok.proxy.PagesProxyMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -91,6 +92,9 @@ DATABASES = {
         'NAME': os.environ.get('DJANGO_DB_PATH', str(BASE_DIR / 'db.sqlite3')),
     }
 }
+if os.environ.get('DATABASE_URL'):
+    from .database import postgres_database
+    DATABASES = {'default': postgres_database(os.environ['DATABASE_URL'], require_tls=not DEBUG)}
 
 # ✅ 비밀번호 검증 설정
 AUTH_PASSWORD_VALIDATORS = [
@@ -149,10 +153,10 @@ NAVER_CLIENT_ID = credential('NAVER_CLIENT_ID')
 NAVER_CLIENT_SECRET = credential('NAVER_CLIENT_SECRET')
 NAVER_BOOKS_API_URL = "https://openapi.naver.com/v1/search/book.json"
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend' if DEBUG else '').strip()
-# Production currently supports only the explicit SMTP delivery backend.
+# Explicit production delivery backends only; free Render uses HTTPS Resend.
 # Console/file/dummy/locmem must never receive live recovery credentials.
-if not DEBUG and EMAIL_BACKEND != 'django.core.mail.backends.smtp.EmailBackend':
-    raise ImproperlyConfigured('Production requires explicit SMTP delivery EMAIL_BACKEND.')
+if not DEBUG and EMAIL_BACKEND not in ('django.core.mail.backends.smtp.EmailBackend', 'user.email_backend.ResendEmailBackend'):
+    raise ImproperlyConfigured('Production requires explicit SMTP or Resend delivery EMAIL_BACKEND.')
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
@@ -169,3 +173,5 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+ORIGIN_PROXY_SECRET = os.environ.get('ORIGIN_PROXY_SECRET', '')
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')

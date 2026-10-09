@@ -3,8 +3,10 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
 from review.views import LikeReviewView
 from user.views import home, LegacyTokenLoginView
+from .health import health
 
 urlpatterns = [
+    path('api/health/', health, name='health'),
     path('admin/', admin.site.urls),
 
     # ✅ JWT 로그인 (토큰 발급 및 갱신)

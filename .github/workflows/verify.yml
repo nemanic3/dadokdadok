@@ -1,0 +1,50 @@
+name: Verify deployment
+on:
+  push:
+    branches: [master]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: dadok_test
+          POSTGRES_PASSWORD: isolated-ci-password-not-production
+          POSTGRES_DB: dadok_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    env:
+      DJANGO_DEBUG: "1"
+      DJANGO_SECRET_KEY: isolated-ci-signing-key-not-production-123456789
+      JWT_SIGNING_KEY: isolated-ci-jwt-signing-key-not-production-123456789
+      DJANGO_DB_PATH: /tmp/dadok-unused.sqlite3
+      DATABASE_URL: postgres://dadok_test:isolated-ci-password-not-production@127.0.0.1:5432/dadok_test?sslmode=disable
+      EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
+      NAVER_CLIENT_ID: ""
+      NAVER_CLIENT_SECRET: ""
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: pip install -r deploy/requirements.txt
+      - run: npm ci --prefix frontend
+      - run: python backend/manage.py test --noinput
+      - run: python backend/manage.py makemigrations --check --dry-run
+      - run: npm test --prefix frontend
+        env:
+          DADOK_TEST_PYTHON: python
+          DADOK_PROJECT_ROOT: ${{ github.workspace }}
+      - run: node --test tests/pages_proxy.test.mjs
+      - run: python scripts/build_pages.py
+      - run: docker build -f deploy/Dockerfile -t dadokdadok-verified .

@@ -1,6 +1,7 @@
 import math
 
 from django.db import IntegrityError, transaction
+from dadokdadok.constraints import is_unique_conflict
 from rest_framework import serializers
 from .models import Review, Like, Comment
 from book.models import Book
@@ -74,7 +75,7 @@ class ReviewSerializer(serializers.ModelSerializer):
             with transaction.atomic():
                 return Review.objects.create(user=user, book=book, **validated_data)
         except IntegrityError as exc:
-            if (str(exc) != 'UNIQUE constraint failed: review.user_id, review.book_id'
+            if (not is_unique_conflict(exc, 'review', ('user_id', 'book_id'))
                     or not Review.objects.filter(user=user, book=book).exists()):
                 raise
             raise serializers.ValidationError({"detail": "이미 해당 책에 대한 리뷰를 작성하셨습니다."}) from exc
