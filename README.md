@@ -2,6 +2,8 @@
 
 기존 독서 기록·검색·추천·공유 플랫폼을 완성하는 프로젝트입니다. HTML/CSS/Vanilla JavaScript 프론트엔드와 Django/DRF 백엔드를 유지합니다. React/Next.js 재구축 프로젝트가 아닙니다.
 
+운영 주소: [dadok.nemanic.dev](https://dadok.nemanic.dev). 무료 배포 구성·환경 변수·검증 결과는 [배포 문서](docs/cloudflare-deployment.md)를 참고하세요.
+
 ## 개발 원칙
 
 `DEVELOPMENT_PRINCIPLES.md`를 따릅니다. 기존 UI·API·데이터를 최대한 보존하고, P0 → P1 → P2 순으로 작은 수정과 회귀 테스트를 수행합니다. 원본 `backend/db.sqlite3`는 개발·테스트 실행에 사용하지 않습니다.
@@ -11,10 +13,10 @@
 - 회원가입, 아이디/이메일 로그인, access/refresh JWT, 로그아웃 및 refresh 폐기
 - 본인 프로필·선택형 이미지 수정, 현재 비밀번호 확인 후 비밀번호 변경
 - 이메일 기반 아이디 안내와 만료·1회성 비밀번호 재설정 링크
-- 네이버 키워드 검색·정확한 ISBN 조회, 정상 빈 결과/외부 오류 구분
+- 카카오 Daum 키워드 검색·정확한 ISBN 조회, 정상 빈 결과/외부 오류 구분
 - 리뷰 CRUD와 작성자 권한, 내 서재, 좋아요 상태/토글, 댓글 CRUD
 - 연간·월간 기간 목표, 서울 시간대의 리뷰 기록일 기준 통계
-- 네이버 연관 도서 추천과 기존 리뷰·평점을 활용한 간단한 개인화 추천
+- 도서 검색 기반 연관 추천과 기존 리뷰·평점을 활용한 간단한 개인화 추천
 
 목표의 집계 날짜는 리뷰 `created_at`입니다. 실제 완독일·재독 횟수를 추측하거나 기존 기록에 자동으로 채우지 않습니다. 기존 무기간 목표도 올해 목표로 자동 변환하지 않습니다.
 
@@ -24,7 +26,7 @@
 backend/
   dadokdadok/       Django 설정·URL·WSGI/ASGI
   user/            인증·프로필·계정 복구
-  book/            네이버 검색·ISBN·최근 도서
+  book/            도서 검색·ISBN·최근 도서
   review/          리뷰·서재·좋아요·댓글
   goal/            기간 목표·통계·보존형 마이그레이션
   recommendation/  연관·개인화 추천
@@ -68,7 +70,7 @@ export DJANGO_ALLOWED_HOSTS='127.0.0.1,localhost,[::1]'
 export EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend'
 ```
 
-네이버 실제 호출에는 승인된 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`가 필요합니다. 실메일 발송에는 승인된 SMTP 설정이 필요합니다. 자동 회귀/E2E는 합성 자격정보·mock 네이버·locmem 메일을 사용합니다.
+실제 책 검색에는 `BOOK_SEARCH_PROVIDER=kakao`와 비공개 `KAKAO_REST_API_KEY`를 환경에 설정합니다. 네이버 책 검색은 2026-07-31 종료됐습니다. 운영 메일은 HTTPS Resend를 사용하며 설정은 배포 문서를 참고하세요. 기존 회귀/E2E의 Naver mock은 과거 응답 형식 호환 검증용이고 실제 API를 호출하지 않습니다.
 
 ## 로컬 실행
 
@@ -142,4 +144,4 @@ DOM 회귀의 Django URLconf 검사는 `.venv-dev` → `.venv-runtime` → `.ven
 
 원본 DB·키·토큰·node_modules·bytecode는 신규 커밋에 포함하지 않습니다. 추적 해제는 로컬 파일 삭제가 아니며, Git 과거 이력의 비밀정보를 지우지도 않습니다. 확인된 과거 노출에는 별도 키 교체/이력 정리 승인이 필요합니다.
 
-키 교체, 원본 DB 변경, 서비스 배포, 실메일·실네이버 호출은 이번 로컬 검증과 별도입니다. 운영 출시 완료 여부는 최종 보고서의 게이트와 제한사항을 확인하십시오.
+과거 로컬 검증 보고서와 현재 운영 배포 상태는 구분합니다. 현재 플랫폼 연결·DB 이전·실제 API 검증·남은 메일 수신/백업 작업은 `docs/cloudflare-deployment.md`에 기록되어 있습니다. 원본 DB는 변경하지 않았습니다.
