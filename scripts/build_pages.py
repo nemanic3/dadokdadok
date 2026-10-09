@@ -23,7 +23,8 @@ def build():
     for name in ('arrow_seeall.svg', 'edit_emoji.svg', 'heart_empty.svg', 'heart_full.svg',
                  'review_star.svg', 'star_empty.svg', 'star_full.svg', 'star_half.svg'):
         shutil.copyfile(ROOT / 'backend/media/icons' / name, icons / name)
-    (OUT / '_redirects').write_text('/ /screen/index.html 302\n')
+    (OUT / '_redirects').write_text('/ /screen/main.html 302\n')
+    (OUT / 'index.html').write_text('<!doctype html><html lang="ko"><meta charset="utf-8"><title>다독다독</title><meta http-equiv="refresh" content="0;url=/screen/main.html"><a href="/screen/main.html">다독다독 홈</a></html>')
     (OUT / '_headers').write_text('/*\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Referrer-Policy: no-referrer\n  Cache-Control: no-cache\n')
     (OUT / '_routes.json').write_text(json.dumps({'version': 1, 'include': ['/api/*'], 'exclude': []}))
     (OUT / '404.html').write_text('<!doctype html><html lang="ko"><meta charset="utf-8"><title>페이지 없음</title><p>페이지를 찾을 수 없습니다.</p><a href="/">다독다독 홈</a></html>')

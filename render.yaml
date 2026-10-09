@@ -24,9 +24,9 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
-      - key: NAVER_CLIENT_ID
-        sync: false
-      - key: NAVER_CLIENT_SECRET
+      - key: BOOK_SEARCH_PROVIDER
+        value: kakao
+      - key: KAKAO_REST_API_KEY
         sync: false
       - key: EMAIL_BACKEND
         value: user.email_backend.ResendEmailBackend

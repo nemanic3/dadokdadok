@@ -39,7 +39,8 @@ jobs:
           node-version: "22"
       - run: pip install -r deploy/requirements.txt
       - run: npm ci --prefix frontend
-      - run: python backend/manage.py test --noinput
+      - run: python manage.py test --noinput
+        working-directory: backend
       - run: python backend/manage.py makemigrations --check --dry-run
       - run: npm test --prefix frontend
         env:

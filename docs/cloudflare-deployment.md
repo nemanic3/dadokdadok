@@ -29,7 +29,8 @@
 | Render Secret | `DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY` | 신규 독립 난수 키, 충분한 길이 |
 | Render Secret | `ORIGIN_PROXY_SECRET` | Pages와 동일 |
 | Render Secret | `DATABASE_URL` | Neon 접속 URL, TLS 필수 |
-| Render Secret | `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` | 승인된 현재 네이버 운영 자격정보 |
+| Render | `BOOK_SEARCH_PROVIDER` | `kakao` |
+| Render Secret | `KAKAO_REST_API_KEY` | 카카오 Daum 책 검색 REST API 키 |
 | Render | `EMAIL_BACKEND` | `user.email_backend.ResendEmailBackend` |
 | Render Secret | `RESEND_API_KEY` | 검증된 발신 도메인의 발송 키 |
 | Render | `DEFAULT_FROM_EMAIL` | 검증된 발신 주소 |
@@ -58,3 +59,5 @@ Render 무료 서버는 idle 15분 후 중단될 수 있고 재개 시 첫 요�
 - 플랫폼 프로젝트·도메인·환경 변수·실제 Naver/메일 전달은 계정 인증과 비밀 값 입력 후 별도로 검증해야 한다. 이 문서는 그 완료를 주장하지 않는다.
 
 참고: [Cloudflare Pages GitHub 연동](https://developers.cloudflare.com/pages/configuration/git-integration/github-integration/), [Render 무료 제한](https://render.com/docs/free), [Render Blueprint](https://render.com/docs/blueprint-spec), [Neon 무료 제공](https://neon.com/blog/neon-free-plan-1-gb-per-project), [Resend 발송 API](https://resend.com/docs/api-reference/emails/send-email).
+
+네이버 책 검색 API는 2026-07-31 종료되어 운영 도서 검색은 카카오 Daum 책 검색으로 교체한다. 공개 API의 필드와 ISBN 조회·추천 호출 경로는 유지한다. 무료 쿼터만 사용하고 유료 API는 활성화하지 않는다.

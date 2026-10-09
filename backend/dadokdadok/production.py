@@ -7,8 +7,8 @@ if len(ORIGIN_PROXY_SECRET) < 32:
     raise ImproperlyConfigured('ORIGIN_PROXY_SECRET must contain at least 32 characters.')
 if not os.environ.get('DATABASE_URL') or DATABASES['default']['ENGINE'] != 'django.db.backends.postgresql':
     raise ImproperlyConfigured('Production requires PostgreSQL DATABASE_URL; ephemeral SQLite is refused.')
-if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
-    raise ImproperlyConfigured('Production requires NAVER_CLIENT_ID and NAVER_CLIENT_SECRET.')
+if BOOK_SEARCH_PROVIDER != 'kakao' or not KAKAO_REST_API_KEY:
+    raise ImproperlyConfigured('Production requires Kakao book search and KAKAO_REST_API_KEY.')
 if EMAIL_BACKEND != 'user.email_backend.ResendEmailBackend' or not RESEND_API_KEY:
     raise ImproperlyConfigured('Free Render production requires Resend EMAIL_BACKEND and RESEND_API_KEY.')
 if DEFAULT_FROM_EMAIL == 'noreply@localhost' or not DEFAULT_FROM_EMAIL:

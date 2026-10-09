@@ -152,6 +152,8 @@ LOGOUT_REDIRECT_URL = '/'
 NAVER_CLIENT_ID = credential('NAVER_CLIENT_ID')
 NAVER_CLIENT_SECRET = credential('NAVER_CLIENT_SECRET')
 NAVER_BOOKS_API_URL = "https://openapi.naver.com/v1/search/book.json"
+BOOK_SEARCH_PROVIDER = os.environ.get('BOOK_SEARCH_PROVIDER', 'naver').strip()
+KAKAO_REST_API_KEY = credential('KAKAO_REST_API_KEY')
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend' if DEBUG else '').strip()
 # Explicit production delivery backends only; free Render uses HTTPS Resend.
 # Console/file/dummy/locmem must never receive live recovery credentials.
